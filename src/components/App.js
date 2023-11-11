@@ -4,6 +4,8 @@ import Loader from "./Loader";
 import Error from "./Error";
 import StartScreen from "./StartScreen";
 import Question from "./Question";
+import NextButton from "./NextButton";
+import Progress from "./Progress";
 import { useEffect, useReducer } from "react";
 
 const initialState = {
@@ -11,6 +13,8 @@ const initialState = {
 	// 'loading' | 'error' | 'ready' | 'active' | 'finished'
 	status: "loading",
 	index: 0,
+	answer: null,
+	points: 0,
 };
 
 function reducer(state, action) {
@@ -34,14 +38,38 @@ function reducer(state, action) {
 				status: "active",
 			};
 
+		case "newAnswer":
+			const question = state.questions.at(
+				state.index
+			);
+			return {
+				...state,
+				answer: action.payload,
+				points:
+					action.payload ===
+					question.correctOption
+						? state.points + question.points
+						: state.points,
+			};
+
+		case "nextQuestion":
+			console.log(state);
+			return {
+				...state,
+				index: state.index + 1,
+				answer: null,
+			};
+
 		default:
 			throw new Error("Action unknown");
 	}
 }
 
-export default function App() {
-	const [{ questions, status, index }, dispatch] =
-		useReducer(reducer, initialState);
+function App() {
+	const [
+		{ questions, status, index, answer, points },
+		dispatch,
+	] = useReducer(reducer, initialState);
 
 	useEffect(() => {
 		fetch("http://localhost:5000/questions")
@@ -58,10 +86,17 @@ export default function App() {
 				dispatch({
 					type: "dataFailed",
 				});
+				console.log(error);
 			});
 	}, []);
 
 	const numQuestions = questions.length;
+	const maxPoints = questions.reduce(
+		(prev, cur) => {
+			return prev + cur.points;
+		},
+		0
+	);
 
 	return (
 		<div className="app">
@@ -76,9 +111,28 @@ export default function App() {
 					/>
 				)}
 				{status === "active" && (
-					<Question question={questions[index]} />
+					<>
+						<Progress
+							index={index}
+							numQuestions={numQuestions}
+							maxPoints={maxPoints}
+							points={points}
+							answer={answer}
+						></Progress>
+						<Question
+							question={questions[index]}
+							dispatch={dispatch}
+							answer={answer}
+						/>
+						<NextButton
+							dispatch={dispatch}
+							answer={answer}
+						/>
+					</>
 				)}
 			</Main>
 		</div>
 	);
 }
+
+export default App;
