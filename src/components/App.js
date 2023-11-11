@@ -6,6 +6,7 @@ import StartScreen from "./StartScreen";
 import Question from "./Question";
 import NextButton from "./NextButton";
 import Progress from "./Progress";
+import FinishScreen from "./FinishScreen";
 import { useEffect, useReducer } from "react";
 
 const initialState = {
@@ -15,6 +16,7 @@ const initialState = {
 	index: 0,
 	answer: null,
 	points: 0,
+	highScore: 0,
 };
 
 function reducer(state, action) {
@@ -60,6 +62,16 @@ function reducer(state, action) {
 				answer: null,
 			};
 
+		case "finish":
+			return {
+				...state,
+				status: "finished",
+				highScore:
+					state.points > state.highScore
+						? state.points
+						: state.highScore,
+			};
+
 		default:
 			throw new Error("Action unknown");
 	}
@@ -67,7 +79,14 @@ function reducer(state, action) {
 
 function App() {
 	const [
-		{ questions, status, index, answer, points },
+		{
+			questions,
+			status,
+			index,
+			answer,
+			points,
+			highScore,
+		},
 		dispatch,
 	] = useReducer(reducer, initialState);
 
@@ -127,8 +146,17 @@ function App() {
 						<NextButton
 							dispatch={dispatch}
 							answer={answer}
+							numQuestions={numQuestions}
+							index={index}
 						/>
 					</>
+				)}
+				{status === "finished" && (
+					<FinishScreen
+						points={points}
+						maxPoints={maxPoints}
+						highScore={highScore}
+					/>
 				)}
 			</Main>
 		</div>
